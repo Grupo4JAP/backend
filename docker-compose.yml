@@ -1,0 +1,37 @@
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: jap_mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ecommerce
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./db_data:/var/lib/mysql
+      - ./ecommerce.sql:/docker-entrypoint-initdb.d/ecommerce.sql
+    networks:
+      - japnet
+
+  backend:
+    build:
+      context: .
+    container_name: jap_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mariadb
+    environment:
+      DB_HOST: mariadb       
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      DB_NAME: ecommerce
+    networks:
+      - japnet
+
+networks:
+  japnet:
