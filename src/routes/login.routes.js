@@ -1,35 +1,34 @@
 const express = require("express");
-const router = express.Router();
 const jwt = require("jsonwebtoken");
-const db = require("../db");
+require("dotenv").config(); // si corres fuera de Docker
 
-router.post("/", async (req, res) => {
-    const { email, password } = req.body;
+const users = require("../data/usuarios.json");
 
-    // buscar usuario
-    const [rows] = await db.query(
-        "SELECT * FROM usuario WHERE email = ?",
-        [email]
-    );
+const router = express.Router();
 
-    if (!rows.length) {
-        return res.status(401).json({ message: "Email o contraseña incorrectos" });
-    }
+const JWT_SECRET = process.env.JWT_SECRET;
 
-    // verificar contraseña
-    const user = rows[0];
+router.post("/login", (req, res) => {
+  const { email, password } = req.body;
 
-    if (user.password_hash !== password) { 
-        return res.status(401).json({ message: "Email o contraseña incorrectos" });
-    }
+  const user = users.find(u => u.email === email && u.password === password);
 
-    const token = jwt.sign(
-        { id: user.id, email: user.email },
-        "clave_secreta",
-        { expiresIn: "1h" }
-    );
+  if (!user) {
+    return res.status(401).json({ message: "Credenciales inválidas" });
+  }
 
-    res.json({ token });
+  const token = jwt.sign(
+    { id: user.id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+
+  res.json({
+    token,
+    id: user.id,
+    email: user.email,
+    name: user.name
+  });
 });
 
 module.exports = router;
